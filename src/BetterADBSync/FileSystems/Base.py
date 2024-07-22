@@ -9,6 +9,7 @@ from ..SAOLogging import perror
 class FileSystem():
     def __init__(self, adb_arguments: List[str]) -> None:
         self.adb_arguments = adb_arguments
+        self.has_invalid_name_potential = False
 
     def _get_files_tree(self, tree_path: str, tree_path_stat: os.stat_result, follow_links: bool = False):
         # the reason to have two functions instead of one purely recursive one is to use self.lstat_in_dir ie ls
@@ -30,6 +31,7 @@ class FileSystem():
             for filename, stat_object_child, in self.lstat_in_dir(tree_path):
                 if filename in [".", ".."]:
                     continue
+                filename = self.convert_invalid_file_name(filename)
                 tree[filename] = self._get_files_tree(
                     self.join(tree_path, filename),
                     stat_object_child,
@@ -138,3 +140,6 @@ class FileSystem():
 
     def push_file_here(self, source: str, destination: str, show_progress: bool = False) -> None:
         raise NotImplementedError
+
+    def convert_invalid_file_name(self, path_destination: str) -> str:
+        raise NotImplementedError  # Problem only persist on Windows. No implement for other system

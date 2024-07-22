@@ -328,6 +328,7 @@ class FileSyncer():
         return path_source, path_destination
 
 def main():
+    # TODO implement no-override file flag
     args = get_cli_args(__doc__, __version__)
 
     setup_root_logger(
@@ -364,6 +365,7 @@ def main():
         fs_source = fs_android
         path_destination = args.direction_pull_local
         fs_destination = fs_local
+        fs_local.setup_invalid_name_check()
 
     path_source, path_destination = FileSyncer.paths_to_fixed_destination_paths(path_source, fs_source, path_destination, fs_destination)
 

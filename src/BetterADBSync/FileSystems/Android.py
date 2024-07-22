@@ -205,3 +205,6 @@ class AndroidFileSystem(FileSystem):
             }
         if subprocess.call(self.adb_arguments + ["push", source, destination], **kwargs_call):
             logging_fatal("Non-zero exit code from adb push")
+
+    def convert_invalid_file_name(self, path_destination: str) -> str:
+        return path_destination  # no implement on other system

@@ -1,4 +1,4 @@
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, NoReturn
 import os
 import subprocess
 
@@ -40,7 +40,8 @@ class LocalFileSystem(FileSystem):
         return os.path.split(path)
 
     def normpath(self, path: str) -> str:
-        return os.path.normpath(path)
+        path = os.path.normpath(path)
+        return self.convert_invalid_file_name(path)
 
     def push_file_here(self, source: str, destination: str, show_progress: bool = False) -> None:
         if show_progress:
@@ -52,3 +53,21 @@ class LocalFileSystem(FileSystem):
             }
         if subprocess.call(self.adb_arguments + ["pull", source, destination], **kwargs_call):
             logging_fatal("Non-zero exit code from adb pull")
+
+    def setup_invalid_name_check(self) -> NoReturn:
+        self.set_invalid_name_potential()
+        self.convert_table = str.maketrans('\/*:?"<>|', '_________')
+
+    def set_invalid_name_potential(self) -> NoReturn:
+        self.has_invalid_name_potential = os.name == 'nt'
+
+    def convert_invalid_file_name(self, path_destination: str) -> str: # usually has this problem on Windows
+        # TODO implement flag for accepting dictionary of invalid-replacement pairs
+        # (or single character replacement if provide a character instead)
+        # TODO implement flag for accepting a list of invalid characters
+        # TODO make character map customizable
+        # TODO implement different list of invalid character for each file system
+        if self.has_invalid_name_potential:
+            return path_destination.translate(self.convert_table)
+        else:
+            return path_destination
