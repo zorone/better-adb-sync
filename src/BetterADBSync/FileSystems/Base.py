@@ -31,7 +31,6 @@ class FileSystem():
             for filename, stat_object_child, in self.lstat_in_dir(tree_path):
                 if filename in [".", ".."]:
                     continue
-                filename = self.convert_invalid_file_name(filename)
                 tree[filename] = self._get_files_tree(
                     self.join(tree_path, filename),
                     stat_object_child,
@@ -69,6 +68,7 @@ class FileSystem():
         tree: Union[Tuple[int, int], dict],
         destination_root: str,
         fs_source: FileSystem,
+        fs_destination: FileSystem,
         dry_run: bool = True,
         show_progress: bool = False
         ) -> None:
@@ -90,12 +90,17 @@ class FileSystem():
             except KeyError:
                 pass
             for key, value in tree.items():
+                # FIXME sync will work improperly if file with name converted already exist
+                destination_key: str = fs_destination.convert_invalid_file_name(key)    # might not need when copy a file, or folder with 1-layer deep
+                if key != destination_key:
+                    logging.info(f"convert {key} -> {destination_key}")
                 self.push_tree_here(
                     fs_source.normpath(fs_source.join(tree_path, key)),
                     fs_source.join(relative_tree_path, key),
                     value,
-                    self.normpath(self.join(destination_root, key)),
+                    self.normpath(self.join(destination_root, destination_key)),
                     fs_source,
+                    fs_destination,
                     dry_run = dry_run,
                     show_progress = show_progress
                 )
@@ -143,3 +148,6 @@ class FileSystem():
 
     def convert_invalid_file_name(self, path_destination: str) -> str:
         raise NotImplementedError  # Problem only persist on Windows. No implement for other system
+
+    def validate_args_path(self, path: str) -> str:
+        raise NotImplementedError

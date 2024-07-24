@@ -1,6 +1,7 @@
-from typing import Iterable, Tuple, NoReturn
+from typing import Iterable, Tuple
 import os
 import subprocess
+import logging
 
 from ..SAOLogging import logging_fatal
 
@@ -40,8 +41,7 @@ class LocalFileSystem(FileSystem):
         return os.path.split(path)
 
     def normpath(self, path: str) -> str:
-        path = os.path.normpath(path)
-        return self.convert_invalid_file_name(path)
+        return os.path.normpath(path)
 
     def push_file_here(self, source: str, destination: str, show_progress: bool = False) -> None:
         if show_progress:
@@ -51,15 +51,18 @@ class LocalFileSystem(FileSystem):
                 "stdout": subprocess.DEVNULL,
                 "stderr": subprocess.DEVNULL
             }
+
+        # TODO add retries limit flag
         if subprocess.call(self.adb_arguments + ["pull", source, destination], **kwargs_call):
             logging_fatal("Non-zero exit code from adb pull")
 
-    def setup_invalid_name_check(self) -> NoReturn:
+    def setup_invalid_name_check(self) -> None:
         self.set_invalid_name_potential()
-        self.convert_table = str.maketrans('\/*:?"<>|', '_________')
+        self.convert_table = str.maketrans('\/*:?"<>|', '_________')    # slash and backslash still needs to be converted
 
-    def set_invalid_name_potential(self) -> NoReturn:
+    def set_invalid_name_potential(self) -> None:
         self.has_invalid_name_potential = os.name == 'nt'
+        logging.debug("has_invalid_name_potential is {}".format(self.has_invalid_name_potential))
 
     def convert_invalid_file_name(self, path_destination: str) -> str: # usually has this problem on Windows
         # TODO implement flag for accepting dictionary of invalid-replacement pairs
@@ -71,3 +74,13 @@ class LocalFileSystem(FileSystem):
             return path_destination.translate(self.convert_table)
         else:
             return path_destination
+
+    def validate_args_path(self, path: str) -> str:
+        invalid_chars: str = None
+
+        if os.name == 'nt':
+            invalid_chars = '*:?"<>|'    # assume that user input won't contain slash or backslash as in file name
+        for char in invalid_chars:
+            if char in path:
+                logging_fatal(f"{path} contains invalid string", force_exit = True)
+        return path
