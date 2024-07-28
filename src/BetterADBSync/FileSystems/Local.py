@@ -79,8 +79,11 @@ class LocalFileSystem(FileSystem):
         invalid_chars: str = None
 
         if os.name == 'nt':
-            invalid_chars = '*:?"<>|'    # assume that user input won't contain slash or backslash as in file name
+            invalid_chars = '*?"<>|'              # assume that user input won't contain slash or backslash as in file name
         for char in invalid_chars:
             if char in path:
+                logging_fatal(f"{path} contains invalid string", force_exit = True)
+        for idx, path_char in enumerate(path):    # seperate ':' case out from above, in case user provide X:\folder\file format
+            if path_char == ':' and idx != 1:
                 logging_fatal(f"{path} contains invalid string", force_exit = True)
         return path
