@@ -58,7 +58,7 @@ class LocalFileSystem(FileSystem):
 
     def setup_invalid_name_check(self) -> None:
         self.set_invalid_name_potential()
-        self.convert_table = str.maketrans('\/*:?"<>|', '_________')    # slash and backslash still needs to be converted
+        self.convert_table = str.maketrans('\\/*:?"<>|', '_________')    # slash and backslash still needs to be converted
 
     def set_invalid_name_potential(self) -> None:
         self.has_invalid_name_potential = os.name == 'nt'
